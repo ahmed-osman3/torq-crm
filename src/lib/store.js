@@ -13,6 +13,7 @@
 
 import { useSyncExternalStore } from 'react'
 import { uid, nowISO } from './format.js'
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './sync-config.js'
 
 const KEY = 'torq-crm:v1'
 
@@ -34,7 +35,10 @@ const DEFAULT_TEAM = [
 
 const EMPTY = { records: {}, team: DEFAULT_TEAM, meId: 'u_ahmed', v: 1 }
 
-// --- persistence boundary (swap these two for a backend) ---------------------
+// --- persistence boundary ----------------------------------------------------
+// localStorage is the instant, offline-safe local cache. Shared team sync (below)
+// layers on top via Supabase REST — the two coexist, so the app works with or
+// without a backend configured.
 function load() {
   try {
     const raw = localStorage.getItem(KEY)
@@ -45,7 +49,7 @@ function load() {
     return { ...EMPTY }
   }
 }
-function persist(s) {
+function persistLocal(s) {
   try {
     localStorage.setItem(KEY, JSON.stringify(s))
   } catch {}
@@ -54,17 +58,96 @@ function persist(s) {
 
 let state = load()
 const listeners = new Set()
+const notify = () => listeners.forEach((l) => l())
 
+// A local user action: cache, notify, and fan out to teammates.
 function set(next) {
   state = next
-  persist(state)
-  listeners.forEach((l) => l())
+  persistLocal(state)
+  notify()
+  schedulePush()
+}
+// Remote changes arriving from a teammate: cache + notify, but DON'T re-push.
+function applyRemote(next) {
+  state = next
+  persistLocal(state)
+  notify()
 }
 function subscribe(l) {
   listeners.add(l)
   return () => listeners.delete(l)
 }
 const getSnapshot = () => state
+
+// --- shared team sync over Supabase REST (fetch-only, no SDK) -----------------
+// Only `records` + `team` are shared; `meId` (who am I) stays per-device. Merge
+// is per-record newest-wins with note union, so concurrent edits don't clobber.
+const SYNC = !!(SUPABASE_URL && SUPABASE_ANON_KEY)
+const REST = SYNC ? `${SUPABASE_URL}/rest/v1/crm_state` : null
+const HEADERS = { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json' }
+
+function mergeRecords(a = {}, b = {}) {
+  const out = { ...a }
+  for (const [id, rb] of Object.entries(b)) {
+    const ra = out[id]
+    if (!ra) { out[id] = rb; continue }
+    const base = (rb.updatedAt || '') > (ra.updatedAt || '') ? rb : ra
+    const notes = new Map()
+    for (const n of ra.notes || []) notes.set(n.id, n)
+    for (const n of rb.notes || []) if (!notes.has(n.id)) notes.set(n.id, n)
+    out[id] = { ...base, notes: [...notes.values()].sort((x, y) => (x.ts || '').localeCompare(y.ts || '')) }
+  }
+  return out
+}
+function mergeTeam(a = [], b = []) {
+  const byId = new Map(a.map((m) => [m.id, m]))
+  for (const m of b) if (!byId.has(m.id)) byId.set(m.id, m)
+  return [...byId.values()]
+}
+async function pullRemote() {
+  const r = await fetch(`${REST}?id=eq.shared&select=data`, { headers: HEADERS })
+  if (!r.ok) return null
+  const rows = await r.json()
+  return rows[0]?.data || { records: {}, team: [] }
+}
+async function pushRemote() {
+  await fetch(REST, {
+    method: 'POST',
+    headers: { ...HEADERS, Prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify([{ id: 'shared', data: { records: state.records, team: state.team }, updated_at: nowISO() }]),
+  })
+}
+function mergedFrom(remote) {
+  const records = mergeRecords(state.records, remote.records)
+  const team = mergeTeam(state.team, remote.team)
+  const changed = JSON.stringify([records, team]) !== JSON.stringify([state.records, state.team])
+  return { changed, next: { ...state, records, team } }
+}
+async function syncOnce() {
+  try {
+    const remote = await pullRemote()
+    if (!remote) return
+    const { changed, next } = mergedFrom(remote)
+    if (changed) applyRemote(next)
+  } catch {}
+}
+let pushTimer = null
+function schedulePush() {
+  if (!SYNC) return
+  clearTimeout(pushTimer)
+  pushTimer = setTimeout(async () => {
+    try {
+      const remote = await pullRemote() // merge in any concurrent remote change first
+      if (remote) { const { changed, next } = mergedFrom(remote); if (changed) applyRemote(next) }
+      await pushRemote()
+    } catch {}
+  }, 800)
+}
+if (SYNC) {
+  syncOnce()
+  setInterval(syncOnce, 4000)
+  if (typeof window !== 'undefined') window.addEventListener('focus', syncOnce)
+}
 
 // React binding
 export function useStore() {
