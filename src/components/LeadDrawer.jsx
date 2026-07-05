@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import { STAGES, actions, stageMeta } from '../lib/store.js'
 import { TierTag, StageTag, Avatar, HotDot } from './ui.jsx'
+import DmComposer from './DmComposer.jsx'
 import { fmtFollowers, fmtNum, timeAgo, TIER_STYLE } from '../lib/format.js'
 
 function CopyBtn({ value }) {
@@ -62,7 +63,7 @@ function Metric({ icon: Icon, label, value, accent }) {
   )
 }
 
-export default function LeadDrawer({ lead, record, team, meId, onClose }) {
+export default function LeadDrawer({ lead, record, team, templates, meId, onClose }) {
   const [note, setNote] = useState('')
 
   useEffect(() => {
@@ -196,6 +197,9 @@ export default function LeadDrawer({ lead, record, team, meId, onClose }) {
               )}
             </div>
           </div>
+
+          {/* Instagram DM composer */}
+          <DmComposer lead={lead} record={record} templates={templates} meId={meId} />
 
           {/* IG signal (hot leads) */}
           {lead.hot && (

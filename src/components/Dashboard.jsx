@@ -48,6 +48,8 @@ export default function Dashboard({ leads, records, team, onOpen, goToPool }) {
     const topOpps = leads.filter((l) => l.hot && !tracked.has(l.id)).slice(0, 6)
 
     const contacted = inPipeline.filter(([, r]) => r.stage !== 'new').length
+    const dmSent = recs.filter(([, r]) => r.dmStatus).length
+    const dmReplied = recs.filter(([, r]) => r.dmStatus === 'replied').length
     return {
       total: leads.length,
       hot: leads.filter((l) => l.hot).length,
@@ -57,6 +59,8 @@ export default function Dashboard({ leads, records, team, onOpen, goToPool }) {
       tiers,
       leaderboard,
       topOpps,
+      dmSent,
+      dmReplied,
       contactRate: inPipeline.length ? Math.round((contacted / inPipeline.length) * 100) : 0,
     }
   }, [leads, records, team])
@@ -79,7 +83,17 @@ export default function Dashboard({ leads, records, team, onOpen, goToPool }) {
           <div className="card animate-fade-up p-5 lg:col-span-2">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="font-display text-lg font-semibold">Pipeline funnel</h3>
-              <span className="tnum text-xs text-faint">{fmtNum(s.pipeline)} tracked</span>
+              <span className="tnum text-xs text-faint">
+                {fmtNum(s.pipeline)} tracked
+                {s.dmSent > 0 && (
+                  <>
+                    {' · '}
+                    <span className="text-accent">{fmtNum(s.dmSent)} DMs</span>
+                    {' · '}
+                    <span className="text-positive">{fmtNum(s.dmReplied)} replied</span>
+                  </>
+                )}
+              </span>
             </div>
             {s.pipeline === 0 ? (
               <p className="py-6 text-center text-sm text-faint">

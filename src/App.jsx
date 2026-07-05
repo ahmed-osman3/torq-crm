@@ -123,6 +123,7 @@ export default function App() {
           lead={openLead}
           record={store.records[openLead.id]}
           team={store.team}
+          templates={store.templates}
           meId={store.meId}
           onClose={() => setOpenId(null)}
         />

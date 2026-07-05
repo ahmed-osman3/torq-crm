@@ -13,10 +13,38 @@ you and your teammates one place to **find → qualify → progress** them.
 - **Pipeline** — a drag-and-drop kanban across **New → Contacted → Replied → Qualified
   → Won / Lost**. Assign owners, and it all reflects on the dashboard.
 - **Lead detail** — full contact block (phone, email, website, Instagram, address,
-  Google rating), the Instagram signal for hot leads, owner assignment, and a shared
-  **notes / activity** trail.
+  Google rating), the Instagram signal for hot leads, owner assignment, an Instagram
+  **DM composer**, and a shared **notes / activity** trail.
 
 Built to be **neat, not heavy**: Vite + React + Tailwind, no backend required to start.
+
+---
+
+## Instagram DM outreach
+
+The CRM is the command centre for your IG outreach — you compose and track here, and
+send in Instagram (one tap away). No automation, no bots, no ban risk, no backend.
+
+- **Compose** — open any lead, pick a **template**, and it fills in merge fields for
+  that business (`{{name}}`, `{{area}}`, `{{category}}`, `{{rating}}`, `{{reviews}}`,
+  `{{followers}}`, `{{handle}}`, `{{district}}`). Edit freely.
+- **Send** — hit **Copy & open DM**: it copies your message and opens that business's
+  DM thread in Instagram (`ig.me/m/handle`). Paste, send, done. There's also a quick
+  **Send** button on each pool row to jump straight to a lead's thread.
+- **Track** — mark **Sent / Replied / No reply**. Marking "Sent" moves the lead to
+  **Contacted**, claims it for you, and logs the exact message to its activity trail —
+  so the whole team can see who's been messaged and what was said.
+- **Work-list** — the pool's **Not DM'd** filter shows every lead with an Instagram
+  handle you haven't messaged yet: your outreach queue. The dashboard shows total DMs
+  sent and replies.
+- **Templates** are shared across the team (they sync like everything else). Manage
+  them from the sliders icon in any lead's DM box.
+
+> Why not send the DMs automatically from inside the CRM? Instagram's official API
+> forbids cold DMs, and doing it via automation violates their ToS and risks account
+> bans — so this "launch-pad" approach gives you the tracking and speed without the
+> risk. If you later want a fully-automated inbox (send + read threads in-app), that's
+> a separate backend service with real trade-offs — ask and we'll scope it.
 
 ---
 

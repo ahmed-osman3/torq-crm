@@ -1,9 +1,9 @@
 import { useMemo, useRef, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { Search, Plus, Check, SlidersHorizontal, Instagram, Star, X, Ban, RotateCcw } from 'lucide-react'
+import { Search, Plus, Check, SlidersHorizontal, Instagram, Star, X, Ban, RotateCcw, Send } from 'lucide-react'
 import { actions, STAGES } from '../lib/store.js'
 import { TierTag, StageTag, Avatar, HotDot } from './ui.jsx'
-import { fmtFollowers, fmtNum } from '../lib/format.js'
+import { fmtFollowers, fmtNum, igDmUrl, DM_STATUS } from '../lib/format.js'
 
 const SORTS = [
   { id: 'score', label: 'Quality score' },
@@ -35,6 +35,7 @@ export default function LeadPool({ leads, records, team, meta, onOpen }) {
   const [hotOnly, setHotOnly] = useState(false)
   const [needEmail, setNeedEmail] = useState(false)
   const [needIG, setNeedIG] = useState(false)
+  const [notDmd, setNotDmd] = useState(false)
   const [poolView, setPoolView] = useState('all') // all | untracked | tracked | discarded
   const parentRef = useRef(null)
 
@@ -57,6 +58,7 @@ export default function LeadPool({ leads, records, team, meta, onOpen }) {
       if (hotOnly && !l.hot) return false
       if (needEmail && !l.email) return false
       if (needIG && !l.instagram) return false
+      if (notDmd && (!l.igHandle || rec?.dmStatus)) return false
       const inPipeline = !!rec?.stage
       if (poolView === 'untracked' && inPipeline) return false
       if (poolView === 'tracked' && !inPipeline) return false
@@ -76,7 +78,7 @@ export default function LeadPool({ leads, records, team, meta, onOpen }) {
       }
     })
     return out
-  }, [leads, records, q, tier, district, category, sort, hotOnly, needEmail, needIG, poolView])
+  }, [leads, records, q, tier, district, category, sort, hotOnly, needEmail, needIG, notDmd, poolView])
 
   const rowVirt = useVirtualizer({
     count: filtered.length,
@@ -85,10 +87,10 @@ export default function LeadPool({ leads, records, team, meta, onOpen }) {
     overscan: 12,
   })
 
-  const anyFilter = tier !== 'all' || district !== 'all' || category !== 'all' || hotOnly || needEmail || needIG || poolView !== 'all' || q
+  const anyFilter = tier !== 'all' || district !== 'all' || category !== 'all' || hotOnly || needEmail || needIG || notDmd || poolView !== 'all' || q
   const clear = () => {
     setQ(''); setTier('all'); setDistrict('all'); setCategory('all')
-    setHotOnly(false); setNeedEmail(false); setNeedIG(false); setPoolView('all')
+    setHotOnly(false); setNeedEmail(false); setNeedIG(false); setNotDmd(false); setPoolView('all')
   }
 
   return (
@@ -132,6 +134,9 @@ export default function LeadPool({ leads, records, team, meta, onOpen }) {
             <Instagram size={12} /> Has Instagram
           </Toggle>
           <Toggle active={needEmail} onClick={() => setNeedEmail((v) => !v)}>@ Has email</Toggle>
+          <Toggle active={notDmd} onClick={() => setNotDmd((v) => !v)}>
+            <Send size={12} /> Not DM'd
+          </Toggle>
           <select value={poolView} onChange={(e) => setPoolView(e.target.value)} className="rounded-lg border border-line bg-raised px-2 py-1.5 text-xs font-semibold text-muted focus:border-accent focus:outline-none">
             <option value="all">All leads</option>
             <option value="untracked">Not in pipeline</option>
@@ -169,7 +174,7 @@ export default function LeadPool({ leads, records, team, meta, onOpen }) {
       </div>
 
       {/* column header */}
-      <div className="grid shrink-0 grid-cols-[1fr_84px_120px_120px_120px_132px] items-center gap-3 border-b border-line px-6 py-2 text-[11px] font-semibold uppercase tracking-wider text-faint">
+      <div className="grid shrink-0 grid-cols-[1fr_84px_116px_128px_116px_152px] items-center gap-3 border-b border-line px-6 py-2 text-[11px] font-semibold uppercase tracking-wider text-faint">
         <span>Business</span>
         <span className="text-center">Tier · Score</span>
         <span>Rating</span>
@@ -197,7 +202,7 @@ export default function LeadPool({ leads, records, team, meta, onOpen }) {
                 <div
                   key={l.id}
                   onClick={() => onOpen(l)}
-                  className="group absolute left-0 top-0 grid w-full cursor-pointer grid-cols-[1fr_84px_120px_120px_120px_132px] items-center gap-3 border-b border-line/70 px-6 hover:bg-accent-soft/30"
+                  className="group absolute left-0 top-0 grid w-full cursor-pointer grid-cols-[1fr_84px_116px_128px_116px_152px] items-center gap-3 border-b border-line/70 px-6 hover:bg-accent-soft/30"
                   style={{ height: vi.size, transform: `translateY(${vi.start}px)` }}
                 >
                   <div className="flex min-w-0 items-center gap-2.5">
@@ -231,6 +236,12 @@ export default function LeadPool({ leads, records, team, meta, onOpen }) {
                       <span className="inline-flex items-center gap-1 text-muted">
                         <Instagram size={13} className="text-accent" />
                         <span className="tnum">{fmtFollowers(l.igFollowers)}</span>
+                        {rec?.dmStatus && DM_STATUS[rec.dmStatus] && (
+                          <span
+                            title={DM_STATUS[rec.dmStatus].label}
+                            className={`ml-0.5 h-1.5 w-1.5 rounded-full ${DM_STATUS[rec.dmStatus].dot}`}
+                          />
+                        )}
                       </span>
                     ) : (
                       <span className="text-faint">—</span>
@@ -251,6 +262,15 @@ export default function LeadPool({ leads, records, team, meta, onOpen }) {
                       </button>
                     ) : (
                       <>
+                        {l.igHandle && (
+                          <button
+                            className="btn-ghost btn h-7 w-7 shrink-0 p-0 text-accent opacity-0 transition hover:bg-accent-soft group-hover:opacity-100"
+                            onClick={() => window.open(igDmUrl(l.igHandle), '_blank', 'noopener,noreferrer')}
+                            title={`Open DM with @${l.igHandle}`}
+                          >
+                            <Send size={14} />
+                          </button>
+                        )}
                         {rec?.stage ? (
                           <span className="inline-flex items-center gap-1 text-xs font-medium text-positive">
                             <Check size={13} /> Added
