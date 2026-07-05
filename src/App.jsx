@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { LayoutDashboard, Table2, KanbanSquare, Users, Loader2 } from 'lucide-react'
+import { LayoutDashboard, Table2, KanbanSquare, Users, Loader2, MessageSquareText } from 'lucide-react'
 import { useStore } from './lib/store.js'
 import { Avatar, Modal } from './components/ui.jsx'
 import Dashboard from './components/Dashboard.jsx'
@@ -7,6 +7,7 @@ import LeadPool from './components/LeadPool.jsx'
 import Pipeline from './components/Pipeline.jsx'
 import LeadDrawer from './components/LeadDrawer.jsx'
 import TeamModal from './components/TeamModal.jsx'
+import TemplatesModal from './components/TemplatesModal.jsx'
 
 const TABS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -20,6 +21,7 @@ export default function App() {
   const [tab, setTab] = useState('dashboard')
   const [openId, setOpenId] = useState(null)
   const [teamOpen, setTeamOpen] = useState(false)
+  const [templatesOpen, setTemplatesOpen] = useState(false)
 
   useEffect(() => {
     fetch(import.meta.env.BASE_URL + 'leads.json')
@@ -81,6 +83,14 @@ export default function App() {
 
         <div className="ml-auto flex items-center gap-2">
           <button
+            onClick={() => setTemplatesOpen(true)}
+            className="btn h-9 gap-2"
+            title="Instagram DM templates"
+          >
+            <MessageSquareText size={15} className="text-accent" />
+            <span className="hidden text-sm md:inline">Templates</span>
+          </button>
+          <button
             onClick={() => setTeamOpen(true)}
             className="btn h-9 gap-2 pl-1.5 pr-3"
             title="Team & sharing"
@@ -132,6 +142,8 @@ export default function App() {
       <Modal open={teamOpen} onClose={() => setTeamOpen(false)} title="Team &amp; sharing" wide>
         <TeamModal team={store.team} meId={store.meId} onClose={() => setTeamOpen(false)} />
       </Modal>
+
+      <TemplatesModal open={templatesOpen} templates={store.templates} onClose={() => setTemplatesOpen(false)} />
     </div>
   )
 }

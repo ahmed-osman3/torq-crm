@@ -40,19 +40,19 @@ const DEFAULT_TEMPLATES = [
   {
     id: 'tpl_intro',
     name: 'Cold intro',
-    body: "Hi {{name}} 👋 came across your Instagram and love the work. We help {{category}} businesses around {{area}} pull more booked-in jobs straight from IG. Mind if I share a quick idea?",
+    body: "Hey {{name}} — your work looks unreal 🔥 I help {{category}} shops around {{area}} turn more Instagram DMs into booked jobs. Got a couple of ideas specific to your page — want me to send them over?",
     updatedAt: '2020-01-01T00:00:00.000Z',
   },
   {
     id: 'tpl_reviews',
-    name: 'Compliment + hook',
-    body: "Hey {{name}}, your {{rating}}★ ({{reviews}} reviews) speak for themselves. We're working with a few detailers & tinters around {{area}} on getting more enquiries from Instagram — reckon it'd suit you. Open to a quick chat?",
+    name: 'Compliment + social proof',
+    body: "Hi {{name}}, {{reviews}} reviews at {{rating}}★ is seriously impressive. We're helping a few detailers & tinters near {{area}} book more jobs straight from Instagram — reckon it'd be a great fit. Worth a quick chat?",
     updatedAt: '2020-01-01T00:00:00.000Z',
   },
   {
     id: 'tpl_direct',
     name: 'Short & direct',
-    body: "Hi {{name}}, do you take new enquiries through Instagram? Got a quick question about your {{category}} service.",
+    body: "Hey {{name}}, do you take bookings through Instagram DMs? Had a quick question about your {{category}} 👇",
     updatedAt: '2020-01-01T00:00:00.000Z',
   },
 ]
